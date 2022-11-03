@@ -9,16 +9,67 @@ generator erd {
   provider = "prisma-erd-generator"
 }
 
-
-
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Poll {
-  id String @id @default(cuid())
-  title String
-  code String @unique
+  id        String   @id @default(cuid())
+  title     String
+  code      String   @unique
   createdAt DateTime @default(now())
+  ownerID   String? //web version does not require login, no owner
+
+  participants Participant[]
+  owner        User?         @relation(fields: [ownerID], references: [id])
+}
+
+//Pivot table - many to many persisted relation - many participants with many guesses
+model Participant {
+  id     String @id @default(cuid())
+  userId String
+  pollId String
+
+  guesses Guess[]
+  user    User    @relation(fields: [userId], references: [id])
+  poll    Poll    @relation(fields: [pollId], references: [id])
+
+  @@unique([userId, pollId]) //participant can be identified by the unique id or by the unique combination of [userId, pollId]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique //unique
+  avatarUrl String? //may be null/inexistent
+  createdAt DateTime @default(now())
+
+  participatingIn Participant[]
+  ownedPolls      Poll[]
+}
+
+model Game {
+  id   String   @id @default(cuid())
+  date DateTime
+
+  firstTeamCountryCode  String
+  secondTeamCountryCode String
+
+  //relation, not a column
+  guesses Guess[]
+}
+
+model Guess {
+  id String @id @default(cuid())
+
+  firstTeamPoints  Int
+  secondTeamPoints Int
+  createdAt        DateTime @default(now())
+  gameId           String
+  participantId    String
+
+  //Not columns, just relations
+  participant Participant @relation(fields: [participantId], references: [id])
+  game        Game        @relation(fields: [gameId], references: [id])
 }
