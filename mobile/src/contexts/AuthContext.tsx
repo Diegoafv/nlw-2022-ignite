@@ -2,6 +2,7 @@ import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { createContext, ReactNode, useEffect, useState } from "react";
+import { api } from "../services/api";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -45,7 +46,23 @@ export function AuthContextProvider({ children }: AuthProviderProps) {
   }
 
   async function signInWithGoogle(access_token: string) {
-    console.log("AUTH TOKEN ===> " + access_token);
+    //console.log("AUTH TOKEN ===> " + access_token);
+    try {
+      setIsUserLoading(true);
+      const tokenResponse = await api.post("/users", { access_token });
+
+      //adds user identification to every request
+      api.defaults.headers.common['Authorization'] = `Bearer ${tokenResponse.data.token}`;
+
+      const userInfoResponse = await api.get('/me');
+      setUser(userInfoResponse.data.user);
+      
+    } catch (error) {
+      console.log(error);
+      throw error;
+    } finally {
+      setIsUserLoading(false);
+    }
   }
 
   //UseEffect executes every time the component is rendered and

@@ -11,6 +11,7 @@ export async function guessRoutes(fastify: FastifyInstance) {
     return { count };
   });
 
+  //Route to submit the guess
   fastify.post(
     "/polls/:pollId/games/:gameId/guesses",
     {
